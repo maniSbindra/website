@@ -1,5 +1,5 @@
 DOCKER       = docker
-HUGO_VERSION = 0.49
+HUGO_VERSION = 0.52
 DOCKER_IMAGE = kubernetes-hugo
 DOCKER_RUN   = $(DOCKER) run --rm --interactive --tty --volume $(CURDIR):/src
 NODE_BIN     = node_modules/.bin
@@ -14,10 +14,10 @@ help: ## Show this help.
 all: build ## Build site with production settings and put deliverables in ./public
 
 build: ## Build site with production settings and put deliverables in ./public
-	hugo
+	hugo --minify
 
 build-preview: ## Build site with drafts and future posts enabled
-	hugo -D -F
+	hugo --buildDrafts --buildFuture
 
 functions-build:
 	$(NETLIFY_FUNC) build functions-src
@@ -40,7 +40,7 @@ sass-develop:
 	scripts/sass.sh develop
 
 serve: ## Boot the development server.
-	hugo server --ignoreCache --disableFastRender --buildFuture
+	hugo server --ignoreCache --buildFuture
 
 docker-image:
 	$(DOCKER) build . --tag $(DOCKER_IMAGE) --build-arg HUGO_VERSION=$(HUGO_VERSION)
@@ -50,6 +50,16 @@ docker-build:
 
 docker-serve:
 	$(DOCKER_RUN) -p 1313:1313 $(DOCKER_IMAGE) hugo server --buildFuture --bind 0.0.0.0
+
+# This command is used only by Travis CI; do not run this locally
+travis-hugo-build:
+	curl -L https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_${HUGO_VERSION}_linux-64bit.tar.gz | tar -xz
+	mkdir -p ${TRAVIS_HOME}/bin
+	mv hugo ${TRAVIS_HOME}/bin
+	export PATH=${TRAVIS_HOME}/bin:$PATH
+
+check-hugo-versions:
+	scripts/hugo-version-check.sh $(HUGO_VERSION)
 
 accessibility-page:
 	$(A11Y) \
