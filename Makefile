@@ -3,6 +3,7 @@ HUGO_VERSION = 0.52
 DOCKER_IMAGE = kubernetes-hugo
 DOCKER_RUN   = $(DOCKER) run --rm --interactive --tty --volume $(CURDIR):/src
 NODE_BIN     = node_modules/.bin
+A11Y         = $(NODE_BIN)/a11ym
 NETLIFY_FUNC = $(NODE_BIN)/netlify-lambda
 
 .PHONY: all build sass build-preview help serve
@@ -24,10 +25,13 @@ functions-build:
 check-headers-file:
 	scripts/check-headers-file.sh
 
-production-build: check-hugo-versions build check-headers-file ## Build the production site and ensure that noindex headers aren't added
+production-build: build check-headers-file accessibility-page ## Build the production site and ensure that noindex headers aren't added
 
-non-production-build: check-hugo-versions ## Build the non-production site, which adds noindex headers to prevent indexing
-	hugo --enableGitInfo
+non-production-build: ## Build the non-production site, which adds noindex headers to prevent indexing
+	hugo \
+		--enableGitInfo \
+		--baseURL $(DEPLOY_PRIME_URL)
+	make accessibility-page
 
 sass-build:
 	scripts/sass.sh build
@@ -56,3 +60,9 @@ travis-hugo-build:
 
 check-hugo-versions:
 	scripts/hugo-version-check.sh $(HUGO_VERSION)
+
+accessibility-page:
+	$(A11Y) \
+	--output-directory public/accessibility \
+	--maximum-urls 10 \
+	https://kubernetes.io
